@@ -1,0 +1,998 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>分布式锁解决方案</title><style type='text/css'>html {overflow-x: initial !important;}:root { --bg-color:#ffffff; --text-color:#333333; --select-text-bg-color:#B5D6FC; --select-text-font-color:auto; --monospace:"Lucida Console",Consolas,"Courier",monospace; --title-bar-height:20px; }
+.mac-os-11 { --title-bar-height:28px; }
+html { font-size: 14px; background-color: var(--bg-color); color: var(--text-color); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0px; padding: 0px; height: auto; bottom: 0px; top: 0px; left: 0px; right: 0px; font-size: 1rem; line-height: 1.42857; overflow-x: hidden; background: inherit; tab-size: 4; }
+iframe { margin: auto; }
+a.url { word-break: break-all; }
+a:active, a:hover { outline: 0px; }
+.in-text-selection, ::selection { text-shadow: none; background: var(--select-text-bg-color); color: var(--select-text-font-color); }
+#write { margin: 0px auto; height: auto; width: inherit; word-break: normal; overflow-wrap: break-word; position: relative; white-space: normal; overflow-x: visible; padding-top: 36px; }
+#write.first-line-indent p { text-indent: 2em; }
+#write.first-line-indent li p, #write.first-line-indent p * { text-indent: 0px; }
+#write.first-line-indent li { margin-left: 2em; }
+.for-image #write { padding-left: 8px; padding-right: 8px; }
+body.typora-export { padding-left: 30px; padding-right: 30px; }
+.typora-export .footnote-line, .typora-export li, .typora-export p { white-space: pre-wrap; }
+.typora-export .task-list-item input { pointer-events: none; }
+@media screen and (max-width: 500px) {
+  body.typora-export { padding-left: 0px; padding-right: 0px; }
+  #write { padding-left: 20px; padding-right: 20px; }
+  .CodeMirror-sizer { margin-left: 0px !important; }
+  .CodeMirror-gutters { display: none !important; }
+}
+#write li > figure:last-child { margin-bottom: 0.5rem; }
+#write ol, #write ul { position: relative; }
+img { max-width: 100%; vertical-align: middle; image-orientation: from-image; }
+button, input, select, textarea { color: inherit; font: inherit; }
+input[type="checkbox"], input[type="radio"] { line-height: normal; padding: 0px; }
+*, ::after, ::before { box-sizing: border-box; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p, #write pre { width: inherit; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p { position: relative; }
+p { line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid-page; break-inside: avoid; orphans: 4; }
+p { orphans: 4; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+.md-math-block, .md-rawblock, h1, h2, h3, h4, h5, h6, p { margin-top: 1rem; margin-bottom: 1rem; }
+.hidden { display: none; }
+.md-blockmeta { color: rgb(204, 204, 204); font-weight: 700; font-style: italic; }
+a { cursor: pointer; }
+sup.md-footnote { padding: 2px 4px; background-color: rgba(238, 238, 238, 0.7); color: rgb(85, 85, 85); border-radius: 4px; cursor: pointer; }
+sup.md-footnote a, sup.md-footnote a:hover { color: inherit; text-transform: inherit; text-decoration: inherit; }
+#write input[type="checkbox"] { cursor: pointer; width: inherit; height: inherit; }
+figure { overflow-x: auto; margin: 1.2em 0px; max-width: calc(100% + 16px); padding: 0px; }
+figure > table { margin: 0px; }
+tr { break-inside: avoid; break-after: auto; }
+thead { display: table-header-group; }
+table { border-collapse: collapse; border-spacing: 0px; width: 100%; overflow: auto; break-inside: auto; text-align: left; }
+table.md-table td { min-width: 32px; }
+.CodeMirror-gutters { border-right: 0px; background-color: inherit; }
+.CodeMirror-linenumber { user-select: none; }
+.CodeMirror { text-align: left; }
+.CodeMirror-placeholder { opacity: 0.3; }
+.CodeMirror pre { padding: 0px 4px; }
+.CodeMirror-lines { padding: 0px; }
+div.hr:focus { cursor: none; }
+#write pre { white-space: pre-wrap; }
+#write.fences-no-line-wrapping pre { white-space: pre; }
+#write pre.ty-contain-cm { white-space: normal; }
+.CodeMirror-gutters { margin-right: 4px; }
+.md-fences { font-size: 0.9rem; display: block; break-inside: avoid; text-align: left; overflow: visible; white-space: pre; background: inherit; position: relative !important; }
+.md-diagram-panel { width: 100%; margin-top: 10px; text-align: center; padding-top: 0px; padding-bottom: 8px; overflow-x: auto; }
+#write .md-fences.mock-cm { white-space: pre-wrap; }
+.md-fences.md-fences-with-lineno { padding-left: 0px; }
+#write.fences-no-line-wrapping .md-fences.mock-cm { white-space: pre; overflow-x: auto; }
+.md-fences.mock-cm.md-fences-with-lineno { padding-left: 8px; }
+.CodeMirror-line, twitterwidget { break-inside: avoid; }
+.footnotes { opacity: 0.8; font-size: 0.9rem; margin-top: 1em; margin-bottom: 1em; }
+.footnotes + .footnotes { margin-top: 0px; }
+.md-reset { margin: 0px; padding: 0px; border: 0px; outline: 0px; vertical-align: top; background: 0px 0px; text-decoration: none; text-shadow: none; float: none; position: static; width: auto; height: auto; white-space: nowrap; cursor: inherit; -webkit-tap-highlight-color: transparent; line-height: normal; font-weight: 400; text-align: left; box-sizing: content-box; direction: ltr; }
+li div { padding-top: 0px; }
+blockquote { margin: 1rem 0px; }
+li .mathjax-block, li p { margin: 0.5rem 0px; }
+li blockquote { margin: 1rem 0px; }
+li { margin: 0px; position: relative; }
+blockquote > :last-child { margin-bottom: 0px; }
+blockquote > :first-child, li > :first-child { margin-top: 0px; }
+.footnotes-area { color: rgb(136, 136, 136); margin-top: 0.714rem; padding-bottom: 0.143rem; white-space: normal; }
+#write .footnote-line { white-space: pre-wrap; }
+@media print {
+  body, html { border: 1px solid transparent; height: 99%; break-after: avoid; break-before: avoid; font-variant-ligatures: no-common-ligatures; }
+  #write { margin-top: 0px; padding-top: 0px; border-color: transparent !important; }
+  .typora-export * { -webkit-print-color-adjust: exact; }
+  .typora-export #write { break-after: avoid; }
+  .typora-export #write::after { height: 0px; }
+  .is-mac table { break-inside: avoid; }
+}
+.footnote-line { margin-top: 0.714em; font-size: 0.7em; }
+a img, img a { cursor: pointer; }
+pre.md-meta-block { font-size: 0.8rem; min-height: 0.8rem; white-space: pre-wrap; background: rgb(204, 204, 204); display: block; overflow-x: hidden; }
+p > .md-image:only-child:not(.md-img-error) img, p > img:only-child { display: block; margin: auto; }
+#write.first-line-indent p > .md-image:only-child:not(.md-img-error) img { left: -2em; position: relative; }
+p > .md-image:only-child { display: inline-block; width: 100%; }
+#write .MathJax_Display { margin: 0.8em 0px 0px; }
+.md-math-block { width: 100%; }
+.md-math-block:not(:empty)::after { display: none; }
+.MathJax_ref { fill: currentcolor; }
+[contenteditable="true"]:active, [contenteditable="true"]:focus, [contenteditable="false"]:active, [contenteditable="false"]:focus { outline: 0px; box-shadow: none; }
+.md-task-list-item { position: relative; list-style-type: none; }
+.task-list-item.md-task-list-item { padding-left: 0px; }
+.md-task-list-item > input { position: absolute; top: 0px; left: 0px; margin-left: -1.2em; margin-top: calc(1em - 10px); border: none; }
+.math { font-size: 1rem; }
+.md-toc { min-height: 3.58rem; position: relative; font-size: 0.9rem; border-radius: 10px; }
+.md-toc-content { position: relative; margin-left: 0px; }
+.md-toc-content::after, .md-toc::after { display: none; }
+.md-toc-item { display: block; color: rgb(65, 131, 196); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-h1 .md-toc-inner { margin-left: 0px; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+@media screen and (max-width: 48em) {
+  .md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+  .md-toc-h4 .md-toc-inner { margin-left: 5em; }
+  .md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+  .md-toc-h6 .md-toc-inner { margin-left: 8em; }
+}
+a.md-toc-inner { font-size: inherit; font-style: inherit; font-weight: inherit; line-height: inherit; }
+.footnote-line a:not(.reversefootnote) { color: inherit; }
+.md-attr { display: none; }
+.md-fn-count::after { content: "."; }
+code, pre, samp, tt { font-family: var(--monospace); }
+kbd { margin: 0px 0.1em; padding: 0.1em 0.6em; font-size: 0.8em; color: rgb(36, 39, 41); background: rgb(255, 255, 255); border: 1px solid rgb(173, 179, 185); border-radius: 3px; box-shadow: rgba(12, 13, 14, 0.2) 0px 1px 0px, rgb(255, 255, 255) 0px 0px 0px 2px inset; white-space: nowrap; vertical-align: middle; }
+.md-comment { color: rgb(162, 127, 3); opacity: 0.8; font-family: var(--monospace); }
+code { text-align: left; vertical-align: initial; }
+a.md-print-anchor { white-space: pre !important; border-width: initial !important; border-style: none !important; border-color: initial !important; display: inline-block !important; position: absolute !important; width: 1px !important; right: 0px !important; outline: 0px !important; background: 0px 0px !important; text-decoration: initial !important; text-shadow: initial !important; }
+.md-inline-math .MathJax_SVG .noError { display: none !important; }
+.html-for-mac .inline-math-svg .MathJax_SVG { vertical-align: 0.2px; }
+.md-math-block .MathJax_SVG_Display { text-align: center; margin: 0px; position: relative; text-indent: 0px; max-width: none; max-height: none; min-height: 0px; min-width: 100%; width: auto; overflow-y: hidden; display: block !important; }
+.MathJax_SVG_Display, .md-inline-math .MathJax_SVG_Display { width: auto; margin: inherit; display: inline-block !important; }
+.MathJax_SVG .MJX-monospace { font-family: var(--monospace); }
+.MathJax_SVG .MJX-sans-serif { font-family: sans-serif; }
+.MathJax_SVG { display: inline; font-style: normal; font-weight: 400; line-height: normal; zoom: 90%; text-indent: 0px; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; overflow-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0px; min-height: 0px; border: 0px; padding: 0px; margin: 0px; }
+.MathJax_SVG * { transition: none 0s ease 0s; }
+.MathJax_SVG_Display svg { vertical-align: middle !important; margin-bottom: 0px !important; margin-top: 0px !important; }
+.os-windows.monocolor-emoji .md-emoji { font-family: "Segoe UI Symbol", sans-serif; }
+.md-diagram-panel > svg { max-width: 100%; }
+[lang="flow"] svg, [lang="mermaid"] svg { max-width: 100%; height: auto; }
+[lang="mermaid"] .node text { font-size: 1rem; }
+table tr th { border-bottom: 0px; }
+video { max-width: 100%; display: block; margin: 0px auto; }
+iframe { max-width: 100%; width: 100%; border: none; }
+.highlight td, .highlight tr { border: 0px; }
+mark { background: rgb(255, 255, 0); color: rgb(0, 0, 0); }
+.md-html-inline .md-plain, .md-html-inline strong, mark .md-inline-math, mark strong { color: inherit; }
+mark .md-meta { color: rgb(0, 0, 0); opacity: 0.3 !important; }
+@media print {
+  .typora-export h1, .typora-export h2, .typora-export h3, .typora-export h4, .typora-export h5, .typora-export h6 { break-inside: avoid; }
+}
+.md-diagram-panel .messageText { stroke: none !important; }
+.md-diagram-panel .start-state { fill: var(--node-fill); }
+.md-diagram-panel .edgeLabel rect { opacity: 1 !important; }
+.md-require-zoom-fix foreignobject { font-size: var(--mermaid-font-zoom); }
+
+
+.CodeMirror { height: auto; }
+.CodeMirror.cm-s-inner { background: inherit; }
+.CodeMirror-scroll { overflow: auto hidden; z-index: 3; }
+.CodeMirror-gutter-filler, .CodeMirror-scrollbar-filler { background-color: rgb(255, 255, 255); }
+.CodeMirror-gutters { border-right: 1px solid rgb(221, 221, 221); background: inherit; white-space: nowrap; }
+.CodeMirror-linenumber { padding: 0px 3px 0px 5px; text-align: right; color: rgb(153, 153, 153); }
+.cm-s-inner .cm-keyword { color: rgb(119, 0, 136); }
+.cm-s-inner .cm-atom, .cm-s-inner.cm-atom { color: rgb(34, 17, 153); }
+.cm-s-inner .cm-number { color: rgb(17, 102, 68); }
+.cm-s-inner .cm-def { color: rgb(0, 0, 255); }
+.cm-s-inner .cm-variable { color: rgb(0, 0, 0); }
+.cm-s-inner .cm-variable-2 { color: rgb(0, 85, 170); }
+.cm-s-inner .cm-variable-3 { color: rgb(0, 136, 85); }
+.cm-s-inner .cm-string { color: rgb(170, 17, 17); }
+.cm-s-inner .cm-property { color: rgb(0, 0, 0); }
+.cm-s-inner .cm-operator { color: rgb(152, 26, 26); }
+.cm-s-inner .cm-comment, .cm-s-inner.cm-comment { color: rgb(170, 85, 0); }
+.cm-s-inner .cm-string-2 { color: rgb(255, 85, 0); }
+.cm-s-inner .cm-meta { color: rgb(85, 85, 85); }
+.cm-s-inner .cm-qualifier { color: rgb(85, 85, 85); }
+.cm-s-inner .cm-builtin { color: rgb(51, 0, 170); }
+.cm-s-inner .cm-bracket { color: rgb(153, 153, 119); }
+.cm-s-inner .cm-tag { color: rgb(17, 119, 0); }
+.cm-s-inner .cm-attribute { color: rgb(0, 0, 204); }
+.cm-s-inner .cm-header, .cm-s-inner.cm-header { color: rgb(0, 0, 255); }
+.cm-s-inner .cm-quote, .cm-s-inner.cm-quote { color: rgb(0, 153, 0); }
+.cm-s-inner .cm-hr, .cm-s-inner.cm-hr { color: rgb(153, 153, 153); }
+.cm-s-inner .cm-link, .cm-s-inner.cm-link { color: rgb(0, 0, 204); }
+.cm-negative { color: rgb(221, 68, 68); }
+.cm-positive { color: rgb(34, 153, 34); }
+.cm-header, .cm-strong { font-weight: 700; }
+.cm-del { text-decoration: line-through; }
+.cm-em { font-style: italic; }
+.cm-link { text-decoration: underline; }
+.cm-error { color: red; }
+.cm-invalidchar { color: red; }
+.cm-constant { color: rgb(38, 139, 210); }
+.cm-defined { color: rgb(181, 137, 0); }
+div.CodeMirror span.CodeMirror-matchingbracket { color: rgb(0, 255, 0); }
+div.CodeMirror span.CodeMirror-nonmatchingbracket { color: rgb(255, 34, 34); }
+.cm-s-inner .CodeMirror-activeline-background { background: inherit; }
+.CodeMirror { position: relative; overflow: hidden; }
+.CodeMirror-scroll { height: 100%; outline: 0px; position: relative; box-sizing: content-box; background: inherit; }
+.CodeMirror-sizer { position: relative; }
+.CodeMirror-gutter-filler, .CodeMirror-hscrollbar, .CodeMirror-scrollbar-filler, .CodeMirror-vscrollbar { position: absolute; z-index: 6; display: none; }
+.CodeMirror-vscrollbar { right: 0px; top: 0px; overflow: hidden; }
+.CodeMirror-hscrollbar { bottom: 0px; left: 0px; overflow: hidden; }
+.CodeMirror-scrollbar-filler { right: 0px; bottom: 0px; }
+.CodeMirror-gutter-filler { left: 0px; bottom: 0px; }
+.CodeMirror-gutters { position: absolute; left: 0px; top: 0px; padding-bottom: 30px; z-index: 3; }
+.CodeMirror-gutter { white-space: normal; height: 100%; box-sizing: content-box; padding-bottom: 30px; margin-bottom: -32px; display: inline-block; }
+.CodeMirror-gutter-wrapper { position: absolute; z-index: 4; background: 0px 0px !important; border: none !important; }
+.CodeMirror-gutter-background { position: absolute; top: 0px; bottom: 0px; z-index: 4; }
+.CodeMirror-gutter-elt { position: absolute; cursor: default; z-index: 4; }
+.CodeMirror-lines { cursor: text; }
+.CodeMirror pre { border-radius: 0px; border-width: 0px; background: 0px 0px; font-family: inherit; font-size: inherit; margin: 0px; white-space: pre; overflow-wrap: normal; color: inherit; z-index: 2; position: relative; overflow: visible; }
+.CodeMirror-wrap pre { overflow-wrap: break-word; white-space: pre-wrap; word-break: normal; }
+.CodeMirror-code pre { border-right: 30px solid transparent; width: fit-content; }
+.CodeMirror-wrap .CodeMirror-code pre { border-right: none; width: auto; }
+.CodeMirror-linebackground { position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px; z-index: 0; }
+.CodeMirror-linewidget { position: relative; z-index: 2; overflow: auto; }
+.CodeMirror-wrap .CodeMirror-scroll { overflow-x: hidden; }
+.CodeMirror-measure { position: absolute; width: 100%; height: 0px; overflow: hidden; visibility: hidden; }
+.CodeMirror-measure pre { position: static; }
+.CodeMirror div.CodeMirror-cursor { position: absolute; visibility: hidden; border-right: none; width: 0px; }
+.CodeMirror div.CodeMirror-cursor { visibility: hidden; }
+.CodeMirror-focused div.CodeMirror-cursor { visibility: inherit; }
+.cm-searching { background: rgba(255, 255, 0, 0.4); }
+@media print {
+  .CodeMirror div.CodeMirror-cursor { visibility: hidden; }
+}
+
+
+:root {
+  --side-bar-bg-color: #fff;
+  --control-text-color: #777;
+  --select-text-bg-color: rgb(255, 179, 179);
+  --active-file-text-color: #262626;
+  --active-file-border-color: #f22f27;
+  /* --active-file-bg-color: #fff3f0; */
+  --primary-color: #f22f27;
+
+  /* 中性色 */
+  --mid-1: #ffffff;
+  --mid-2: #fafafa;
+  --mid-3: #f5f5f5;
+  --mid-4: #f0f0f0;
+  --mid-5: #d9d9d9;
+  --mid-6: #bfbfbf;
+  --mid-7: #8c8c8c;
+  --mid-8: #595959;
+  --mid-9: #434343;
+  --mid-10: #262626;
+  --mid-11: #1f1f1f;
+  --mid-12: #141414;
+  --mid-13: #000000;
+  /* 主题色 */
+  --main-1: #fff3f0;
+  --main-2: #ffd4cc;
+  --main-3: #ffafa3;
+  --main-4: #ff887a;
+  --main-5: #ff5d52;
+  --main-6: #f22f27;
+  --main-7: #cc1616;
+  --main-8: #a60a0f;
+  --main-9: #80010a;
+  --main-10: #590009;
+
+  --bg-color: hsl(0, 0%, 100%);
+	--write-bg: hsl(0, 0%, 100%);
+	--link-bg: transparent;
+	--mark-bg: hsl(0, 100%, 85%);
+	--code-bg: hsl(0, 100%, 95%);
+	--codeb-bg: hsl(0, 0%, 95%);
+	--quota-bg: hsl(0, 0%, 95%);
+	--thead-bg: hsl(0, 0%, 90%);
+	--tbody-bg: hsl(0, 0%, 96%);
+
+	--title-color: hsl(0, 0%, 5%);
+	--text-color: hsl(0, 0%, 20%);
+	--mark-color: hsl(0, 0%, 20%);
+	--code-color: hsl(0, 0%, 20%);
+	--quota-color: hsl(0, 0%, 35%);
+	--codeb-color: hsl(0, 0%, 50%);
+	--footer-color: hsl(0, 0%, 50%);
+	--link-color: hsl(0, 100%, 75%);
+
+	--md-char-color: hsl(0, 100%, 65%);
+	--meta-content-color: hsl(0, 0%, 50%);
+
+	--link-hover: hsl(0, 100%, 65%);
+	--thead-hover: hsl(0, 0%, 99%);
+	--tbody-hover: hsl(0, 0%, 99%);
+
+	--window-border: 1px solid hsl(0, 0%, 95%);
+	--base-border: 1px solid hsl(0, 100%, 65%);
+	--base-borderl: 4px solid hsl(0, 100%, 65%);
+	--base-borderb: 1px dashed hsl(0, 100%, 65%);
+	--opt-borderb: 1px dashed hsl(215, 100%, 65%);
+
+	--base-shadow: 0px 8px 16px hsla(0, 0%, 0%, .2);
+	--opt-shadow: 0px 8px 16px 1px hsla(0, 0%, 0%, 0.3);
+	--img-shadow: var(--opt-shadow);
+	--code-shadow: var(--base-shadow);
+	--quota-shadow: var(--base-shadow);
+
+	--base-font: "Poppins", -apple-system, "Noto Sans", "Helvetica Neue", Helvetica, "Nimbus Sans L", Arial, "Liberation Sans", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp", sans-serif;
+
+	--title-font: "EB Garamond", Georgia, "Nimbus Roman No9 L", "Noto Serif CJK SC", "Songti SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
+
+	--em-font: "EB Garamond", Georgia, "Nimbus Roman No9 L", "Noto Serif CJK SC"， "Songti SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
+
+	--quota-font: "EB Garamond", Baskerville, Georgia, "Liberation Serif", "TW-Kai", "Kaiti SC", STKaiti, "AR PL UKai CN", "AR PL UKai HK", "AR PL UKai TW", "AR PL UKai TW MBE", "AR PL KaitiM GB", KaiTi, KaiTi_GB2312, DFKai-SB, "TW\-Kai", serif;
+
+	--monospace: "Cascadia code", "Sarasa Term SC", Monaco, "Deja Vu Sans Mono", Consolas, "Lucida Console", "Andale Mono", Courier;
+}
+
+/* cyrillic-ext */
+/* cyrillic */
+/* greek-ext */
+/* greek */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic-ext */
+/* cyrillic */
+/* greek-ext */
+/* greek */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic-ext */
+/* cyrillic */
+/* greek-ext */
+/* greek */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic-ext */
+/* cyrillic */
+/* greek-ext */
+/* greek */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+html {
+  font-size: 14px;
+}
+
+body {
+  font-family: Source Sans Pro, Helvetica Neue, Arial, sans-serif !important;
+  color: var(--mid-10);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.8rem;
+  letter-spacing: 0;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+#write {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 30px 160px;
+}
+
+#write p {
+  line-height: 1.8rem;
+  word-spacing: 0.05rem;
+}
+
+#write ul {
+  line-height: 2rem;
+}
+
+#write ol li {
+  text-indent: 0.5rem;
+}
+
+#write > ul:first-child,
+#write > ol:first-child {
+  margin-top: 30px;
+}
+
+body > *:first-child {
+  margin-top: 0 !important;
+}
+
+body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+a {
+  color: var(--main-6);
+  font-weight: 500;
+  padding: 0 2px;
+  text-decoration: none;
+}
+
+/* 链接 */
+#write a {
+  border-bottom: 1px solid var(--main-6);
+  color: var(--main-6);
+  text-decoration: none;
+}
+
+#write a:hover {
+  border-bottom: 2px solid var(--main-6);
+  color: var(--main-7);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  line-height: 1.4;
+  cursor: text;
+}
+
+h1:hover a.anchor,
+h2:hover a.anchor,
+h3:hover a.anchor,
+h4:hover a.anchor,
+h5:hover a.anchor,
+h6:hover a.anchor {
+  text-decoration: none;
+}
+
+h1 tt,
+h1 code,
+h2 tt,
+h2 code,
+h3 tt,
+h3 code,
+h4 tt,
+h4 code,
+h5 tt,
+h5 code,
+h6 tt,
+h6 code {
+  font-size: inherit !important;
+}
+
+h2 a,
+h3 a {
+  color: var(--mid-9);
+}
+
+h1 {
+  text-align: center;
+  padding-bottom: 0.3em;
+  font-size: 2em;
+  line-height: 1.2;
+  margin: 2.4em auto 1.2em;
+}
+
+h1:after {
+  content: '';
+  display: block;
+  margin: 0.2em auto 0;
+  width: 100px;
+  height: 2px;
+  border-bottom: 2px dashed var(--main-6);
+}
+
+h2 {
+  margin: 2em auto 1.4em;
+  padding-left: 6px;
+  line-height: 1.4;
+  font-size: 1.6em;
+  border-left: 6px solid var(--main-6);
+}
+
+h3 {
+  margin: 1.6em auto 1.2em;
+  font-size: 1.35em;
+  line-height: 1.43;
+}
+
+/*--- 三级标题左边的小圆点 ---*/
+h3:before {
+  content: '';
+  border-radius: 50%;
+  background-color: var(--main-5);
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  vertical-align: middle;
+  margin-bottom: 0.18em;
+  margin-right: 6px;
+}
+
+/* 三级四级标题点击后左边的提示图标 */
+#write > h3.md-focus:before,
+#write > h4.md-focus:before {
+  width: auto;
+  height: auto;
+  background-color: var(--main-5);
+  color: var(--mid-1);
+}
+
+h4 {
+  margin-top: 1.4em;
+  font-size: 1.2em;
+}
+
+/*--- 四级标题左边的小短线 ---*/
+h4:before {
+  background-color: var(--main-4);
+  content: '';
+  width: 6px;
+  display: inline-block;
+  height: 2px;
+  vertical-align: middle;
+  margin-bottom: 0.18em;
+  margin-right: 8px;
+}
+
+h5 {
+  font-size: 1em;
+}
+
+h6 {
+  font-size: 1em;
+  color: var(--mid-7);
+}
+
+p,
+blockquote,
+ul,
+ol,
+dl,
+table {
+  margin: 0.8em 0;
+}
+
+li > ol,
+li > ul {
+  margin: 0 0;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  padding: 0;
+  margin: 46px auto 64px;
+  background-color: var(--main-4);
+  border: 0;
+  overflow: hidden;
+  box-sizing: content-box;
+}
+
+body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+body > h1:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+body > h1:first-child + h2 {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+body > h3:first-child,
+body > h4:first-child,
+body > h5:first-child,
+body > h6:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+a:first-child h1,
+a:first-child h2,
+a:first-child h3,
+a:first-child h4,
+a:first-child h5,
+a:first-child h6 {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+h1 p,
+h2 p,
+h3 p,
+h4 p,
+h5 p,
+h6 p {
+  margin-top: 0;
+}
+
+li p.first {
+  display: inline-block;
+}
+
+ul,
+ol {
+  padding-left: 30px;
+}
+
+ul:first-child,
+ol:first-child {
+  margin-top: 0;
+}
+
+ul:last-child,
+ol:last-child {
+  margin-bottom: 0;
+}
+
+/*--- 引用块 ---*/
+blockquote {
+  position: relative;
+  border: none;
+  border-left: 2px solid var(--main-6);
+  color: var(--mid-7);
+  font-size: 1em;
+  font-style: normal;
+  padding: 24px 16px 12px;
+  margin: 24px 0 36px;
+  line-height: 1.6;
+  text-indent: 0;
+}
+
+blockquote blockquote {
+  padding-right: 0;
+}
+
+blockquote a {
+  color: var(--main-4);
+}
+
+blockquote:before {
+  content: '“';
+  position: absolute;
+  left: 12px;
+  top: 0;
+  color: var(--main-6);
+  font-size: 2em;
+  font-family: Arial, serif;
+  line-height: 1em;
+  font-weight: 700;
+}
+
+table {
+  margin: 36px auto;
+  padding: 0;
+  word-break: initial;
+}
+
+table tr {
+  border-top: 1px solid #dfe2e5;
+  margin: 0;
+  padding: 0;
+}
+
+table tr:nth-child(2n),
+thead {
+  background-color: var(--mid-3);
+}
+
+table tr th {
+  font-weight: bold;
+  border: 1px solid #dfe2e5;
+  border-bottom: 0;
+  text-align: left;
+  margin: 0;
+  padding: 6px 13px;
+}
+
+table tr td {
+  border: 1px solid #dfe2e5;
+  text-align: left;
+  margin: 0;
+  padding: 6px 13px;
+}
+
+table tr th:first-child,
+table tr td:first-child {
+  margin-top: 0;
+}
+
+table tr th:last-child,
+table tr td:last-child {
+  margin-bottom: 0;
+}
+
+#write table thead th {
+  background-color: #f2f2f2;
+  text-align: center;
+}
+
+#write strong {
+  padding: 0 1px;
+}
+
+#write em {
+  padding: 0 5px 0 2px;
+}
+
+#write .CodeMirror-gutters {
+  border-right: none;
+}
+
+/* code & codeblock style */
+
+/* codeblock mac style */
+#write pre.md-fences {
+	border-top: 2rem solid var(--mark-color);
+	padding: 1rem 0.5rem 1rem;
+	display: block;
+	-webkit-overflow-scrolling: touch;
+	box-shadow: var(--code-shadow);
+}
+
+pre.md-fences:before {
+	content: ' ';
+	background: #fc625d;
+	box-shadow: 23px 0 #fdbc40, 45px 0 #35cd4b;
+	border-radius: 50%;
+	margin-top: -2.3rem;
+	position: absolute;
+	left: 15px;
+	height: 12px;
+	width: 12px;
+}
+
+#write pre.md-meta-block,
+#write pre.md-fences,
+code {
+	line-height: 1.5rem;
+	font-size: .9rem;
+	font-weight: 300;
+	border-radius: 5px;
+	background-color: var(--codeb-bg);
+	color: var(--codeb-color);
+}
+
+.cm-s-inner .CodeMirror-cursor {
+	border-left: solid var(--link-color) !important;
+}
+
+/* code style */
+code {
+	background-color: var(--code-bg);
+	color: var(--code-color);
+}
+
+kbd,
+samp,
+tt,
+var {
+	font-family: var(--monospace);
+}
+
+/* 代码块下的标题颜色过深。修改为浅蓝 */
+.cm-s-inner .cm-header,
+.cm-s-inner.cm-header {
+	color: hsl(215, 100%, 75%);
+}
+
+#write .md-footnote {
+  color: var(--main-5);
+  background-color: var(--main-1);
+}
+
+/* heighlight. */
+#write mark {
+  background-color: var(--main-4);
+  border-radius: 2px;
+  padding: 2px 4px;
+  margin: 0 2px;
+  color: #222;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+#write del {
+  padding: 1px 2px;
+}
+
+.cm-s-inner .cm-link,
+.cm-s-inner.cm-link {
+  color: #22a2c9;
+}
+
+.cm-s-inner .cm-string {
+  color: #22a2c9;
+}
+
+/* 任务列表小方框 */
+.md-task-list-item > input {
+  margin-left: -1.3em;
+  margin-top: 0.3rem;
+  -webkit-appearance: none;
+}
+
+.md-task-list-item > input:before {
+  content: '';
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--mid-1);
+  border-radius: 2px;
+  border: 1px solid var(--main-4);
+  margin-top: -0.4rem;
+  transition: all 0.2s linear;
+}
+
+.md-task-list-item > input:checked:before,
+.md-task-list-item > input[checked]:before {
+  content: '\2714';
+  font-size: 0.625rem;
+  color: var(--mid-1);
+  border: 1px solid var(--main-6);
+  background-color: var(--main-6);
+}
+
+@media print {
+  html {
+    font-size: 13px;
+  }
+
+  table,
+  pre {
+    page-break-inside: avoid;
+  }
+
+  pre {
+    word-wrap: break-word;
+  }
+}
+
+/* .md-fences {
+  background-color: #f8f8f8;
+} */
+
+#write pre.md-meta-block {
+  /* padding: 1rem; */
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f7f7f7;
+  border: 0;
+  border-radius: 3px;
+  color: #777777;
+  margin-top: 0 !important;
+}
+
+.mathjax-block > .code-tooltip {
+  bottom: 0.375rem;
+}
+
+#write > h3.md-focus:before {
+  left: -1.5625rem;
+  top: 0.375rem;
+}
+
+#write > h4.md-focus:before {
+  left: -1.5625rem;
+  top: 0.285714286rem;
+}
+
+#write > h5.md-focus:before {
+  left: -1.5625rem;
+  top: 0.285714286rem;
+}
+
+#write > h6.md-focus:before {
+  left: -1.5625rem;
+  top: 0.285714286rem;
+}
+
+/*--- 图片 ---*/
+.md-image {
+  margin: 24px auto;
+  border-radius: 4px;
+}
+
+.md-image img {
+  border-radius: 4px;
+}
+
+/* 当 “![shadow-随便写]()”写时，会有阴影 */
+.md-image img[alt|='shadow'] {
+  box-shadow: 0 4px 24px -6px #ddd;
+}
+
+.md-image > .md-meta {
+  border-radius: 3px;
+  font-family: Consolas, 'Liberation Mono', Courier, monospace;
+  padding: 2px 0 0 4px;
+  font-size: 0.9em;
+  color: inherit;
+}
+
+/* emoji */
+.md-emoji-span:before {
+  content: attr(data-emoji);
+  font-weight: 400;
+  vertical-align: inherit;
+}
+
+.md-tag {
+  color: inherit;
+}
+
+.md-toc {
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+
+.sidebar-tabs {
+  border-bottom: none;
+}
+
+#typora-quick-open {
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+}
+
+#typora-quick-open-item {
+  background-color: #fafafa;
+  border-color: #fefefe #e5e5e5 #e5e5e5 #eee;
+  border-style: solid;
+  border-width: 1px;
+}
+
+#md-notification:before {
+  top: 10px;
+}
+
+/** focus mode */
+
+.on-focus-mode blockquote {
+  border-left-color: rgba(85, 85, 85, 0.12);
+}
+
+header,
+.context-menu,
+.megamenu-content,
+footer {
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+.file-node-content:hover .file-node-icon,
+.file-node-content:hover .file-node-open-state {
+  visibility: visible;
+}
+
+.mac-seamless-mode #typora-sidebar {
+  background-color: var(--side-bar-bg-color);
+}
+
+.md-lang {
+  color: #b4654d;
+}
+
+.html-for-mac .context-menu {
+  --item-hover-bg-color: #e6f0fe;
+}
+
+/* 侧边栏 */
+.file-list-item.active {
+  background: var(--active-file-bg-color);
+  color: var(--active-file-text-color);
+  border-left: 4px solid var(--main-6);
+}
+
+.file-tree-node.active > .file-node-background {
+  background-color: var(--active-file-bg-color);
+  border-left: 4px solid var(--main-6);
+  border-color: var(--active-file-border-color);
+}
+
+ :root {--mermaid-font-zoom:1.25em ;} 
+</style>
+</head>
+<body class='typora-export os-windows'>
+<div id='write'  class=''><h1><a name="分布式锁" class="md-header-anchor"></a><span>分布式锁</span></h1><h2><a name="内容提要" class="md-header-anchor"></a><span>内容提要</span></h2><p><span>本文是为想要或者正在使用Java分布式锁的开发人员而写的，循序渐进的介绍了它的原理和用法。</span></p><p><span>前置知识：MySQL、Redis、ZooKeeper基础。</span></p><p><span>代码获取地址：</span><a href='https://github.com/YuyuanCoder/My-Article/tree/main/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/distributed-lock' target='_blank' class='url'>https://github.com/YuyuanCoder/My-Article/tree/main/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/distributed-lock</a></p><p>&nbsp;</p><h2><a name="1-锁" class="md-header-anchor"></a><span>1 锁</span></h2><blockquote><p><span>假设有这样一个场景：</span></p><p><span>	</span><span>有线程A、B，要对一份数据进行操作。</span></p><p><span>	</span><span>如：A，B均要对金钱100进行加50元的操作，正确结果应为200元，但操作可能被分解成如下三步。</span></p><ol start='' ><li><span>A，B均读取到金钱100元</span></li><li><span>A，B均执行100+50 = 150元</span></li><li><span>A，B均将150元写回，操作结束后，结果为150元（错误）</span></li></ol><p><span>为解决这个问题，你会怎么做呢？</span></p></blockquote><h3><a name="11-锁的本质" class="md-header-anchor"></a><span>1.1 锁的本质</span></h3><ul><li><span>为充分利用硬件资源，提升应用程序性能，常常采用并发编程。但解决一个问题的同时，往往会面临新的问题与挑战。</span></li><li><span>在单进程系统中，当存在多个线程同时读写某段数据时，应采取何种手段，保证多个线程按照正确的步骤执行，防止数据污染。</span></li><li><span>可以建立一个所有线程都能看得到的标记。当某一线程想执行指令（读写数据）时，应先获取标记，才能执行指令。而当后续线程执行指令时，因标记已被先前线程获取，故而阻塞，等待标记释放后的操作将其唤醒。</span></li><li><span>这个标记称之锁，锁的本质即是确保任意一时刻同一段数据只能有一个线程进行读写操作，保证数据正确性。</span></li><li><span>在不同的平台，锁有不同的实现，只要能满足所有线程均对锁可见即可。如Java中的synchronized关键字采用与对象关联的moniter，AQS采用volatile int state，Linux内核则采用互斥量或信号量等内存数据。</span></li></ul><h3><a name="12-锁的作用" class="md-header-anchor"></a><span>1.2 锁的作用</span></h3><ul><li><strong><span>提升效率</span></strong><span>：使用锁来保证一个任务没有必要被执行两次，比如很昂贵的计算。</span></li><li><strong><span>保证正确</span></strong><span>：使用锁来保证任务按照正常的步骤执行，防止两个节点同时操作一份数据，造成文件冲突，数据丢失。</span></li></ul><p>&nbsp;</p><h2><a name="2-分布式锁" class="md-header-anchor"></a><span>2 分布式锁</span></h2><h3><a name="21-分布式场景下单机锁的局限性" class="md-header-anchor"></a><span>2.1 分布式场景下单机锁的局限性</span></h3><blockquote><p><span>对分布式系统并不了解的同学，推荐周志明老师的</span><a href='https://icyfenix.cn/'><span>《软件架构探索》</span></a></p></blockquote><ul><li><span>分布式与单机情况下最大的不同在于其不仅仅是多线程，更是多进程。</span></li><li><span>多线程由于可以共享内存，因此可以简单地采取内存作为锁存储位置。那么在分布式场景下，只需将锁存在多个节点都可以访问的数据系统中即可。</span></li><li><span>简单来说，是这样的。但由于在分布式环境下，我们必须考虑到网络环境的延时与不可靠，解决其带来的问题。</span></li></ul><h3><a name="22-我们需要怎样的分布式锁" class="md-header-anchor"></a><span>2.2 我们需要怎样的分布式锁？</span></h3><p><strong><span>基本可用</span></strong></p><ul><li><strong><span>互斥性</span></strong><span>：防止两个节点同时获取到同一把锁。</span></li><li><strong><span>可重入性</span></strong><span>：避免死锁。</span></li></ul><p><strong><span>锦上添花</span></strong></p><ul><li><strong><span>公平性</span></strong><span>：根据业务需求，是否建立队列进行排队，防止产生线程饥饿。</span></li><li><strong><span>高可用性</span></strong><span>：数据系统高可用，避免单点故障。</span></li><li><strong><span>性能</span></strong><span>：上锁与释放的执行时间应远远小于获取锁后执行任务的时间。</span></li><li><strong><span>透明性</span></strong><span>：业务使用端应尽量透明，无需关注技术细节。</span></li><li><strong><span>异常情况的处理</span></strong><span>：如已获取锁的客户端宕机，GC暂停所有线程等。</span></li></ul><p><img src="images/分布式锁解决方案.png" referrerpolicy="no-referrer" alt="分布式锁解决方案"></p><p>&nbsp;</p><h2><a name="3-主流实现" class="md-header-anchor"></a><span>3 主流实现</span></h2><h3><a name="31-mysql" class="md-header-anchor"></a><span>3.1 MySQL</span></h3><h4><a name="311-内部的互斥锁" class="md-header-anchor"></a><span>3.1.1 内部的互斥锁</span></h4><p><span>现代数据库都提供了以下三种锁：</span></p><ul><li><strong><span>写锁</span></strong><span>（Write Lock，也叫做排他锁 eXclusive Lock，简写为 X-Lock）：只有持有写锁的事务才能对数据进行写入操作，数据加持着写锁时，其他事务不能写入数据，也不能施加读锁。</span></li><li><strong><span>读锁</span></strong><span>（Read Lock，也叫做共享锁 Shared Lock，简写为 S-Lock）：多个事务可以对同一个数据添加多个读锁，数据被加上读锁后就不能再被加上写锁，所以其他事务不能对该数据进行写入，但仍然可以读取。对于持有读锁的事务，如果该数据只有一个事务加了读锁，那可以直接将其升级为写锁，然后写入数据。</span></li><li><strong><span>范围锁</span></strong><span>（Range Lock）：对于某个范围直接加排他锁，在这个范围内的数据不能被读取，也不能被写入。如下语句是典型的加范围锁的例子：</span></li></ul><pre spellcheck="false" class="md-fences md-end-block md-fences-with-lineno ty-contain-cm modeLoaded" lang="sql"><div class="CodeMirror cm-s-inner CodeMirror-wrap" lang="sql"><div style="overflow: hidden; position: relative; width: 3px; height: 0px; top: 0px; left: 29px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" tabindex="0" style="position: absolute; bottom: -1em; padding: 0px; width: 1000px; height: 1em; outline: none;"></textarea></div><div class="CodeMirror-scrollbar-filler" cm-not-content="true"></div><div class="CodeMirror-gutter-filler" cm-not-content="true"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 25px; margin-bottom: 0px; border-right-width: 0px; padding-right: 0px; padding-bottom: 0px;"><div style="position: relative; top: 0px;"><div class="CodeMirror-lines" role="presentation"><div role="presentation" style="position: relative; outline: none;"><div class="CodeMirror-measure"></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-code" role="presentation"><div class="CodeMirror-activeline" style="position: relative;"><div class="CodeMirror-activeline-background CodeMirror-linebackground"></div><div class="CodeMirror-gutter-background CodeMirror-activeline-gutter" style="left: -25px; width: 25px;"></div><div class="CodeMirror-gutter-wrapper CodeMirror-activeline-gutter" style="left: -25px;"><div class="CodeMirror-linenumber CodeMirror-gutter-elt CodeMirror-linenumber-show" style="left: 0px; width: 17px;">1</div></div><pre class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;"><span class="cm-keyword">select</span> * <span class="cm-keyword">from</span> fu_distribute_lock <span class="cm-keyword">where</span> `lock_name`=<span class="cm-variable-3">? </span>for <span class="cm-keyword">update</span></span></pre></div></div></div></div></div></div><div style="position: absolute; height: 0px; width: 1px; border-bottom: 0px solid transparent; top: 21px;"></div><div class="CodeMirror-gutters" style="height: 21px;"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 25px;"></div></div></div></div></pre><p><strong><span>在MySQL InnoDB引擎中，我们可以通过如上语句，为匹配到的数据行上一把行级写锁。基于此思想，实现分布式锁。</span></strong></p><p><img src="images/image-20210317151103026.png" referrerpolicy="no-referrer" alt="image-20210317151103026"></p><figure><table><thead><tr><th>&nbsp;</th><th><span>sessionA</span></th><th><span>sessionB</span></th></tr></thead><tbody><tr><td><span>T1</span></td><td><span>begin;     select * from fu_distribute_lock where lock_name = ? for update;     // 成功获取锁，执行任务</span></td><td>&nbsp;</td></tr><tr><td><span>T2</span></td><td>&nbsp;</td><td><span>begin;     select * from fu_distribute_lock where lock_name = ? for update;     // 阻塞</span></td></tr><tr><td><span>T3</span></td><td><span>commit or rollback;</span></td><td>&nbsp;</td></tr><tr><td><span>T4</span></td><td>&nbsp;</td><td><span>// 成功获取锁，执行任务</span></td></tr><tr><td><span>T5</span></td><td>&nbsp;</td><td><span>commit or rollback;</span></td></tr></tbody></table></figure><p><strong><span>优点</span></strong></p><ul><li><span>实现简单、易于理解，满足互斥性、可重入性。</span></li><li><span>当已获取锁的客户端宕机时，事务会自动回滚，释放锁，不必担心锁一直被占用。</span></li></ul><p><strong><span>弊端</span></strong></p><ul><li><span>MySQL涉及到大量IO操作，相较部分新型数据系统，性能略低。</span></li><li><span>每一进程占用一个数据库连接，大量使用资源，降低正常业务的吞吐量。</span></li><li><span>理论上，MySQL会通过索引，选中对应的数据行，加上行锁。但如果MySQL认为全表扫描效率更高（很小的表，或MVCC导致的未走索引），导致实际情况与预期情况不一致。可采用force强制走索引解决。</span></li><li><span>MySQL宕机会导致整个系统不可用。可采用一主两从的方式，同时分机房部署，Master和Slave之间采用半同步方式同步数据。当然这种方案在一些情况会退化成异步模式，甚至在非常极端情况下仍然会造成数据不一致的情况，但是出现的概率非常小。如果你的系统要保证100%的数据强一致，可以选择使用“类Paxos算法”实现的强一致MySQL方案，如MySQL 5.7前段时间刚刚GA的</span><a href='https://dev.mysql.com/doc/refman/5.7/en/group-replication.html'><span>MySQL Group Replication</span></a><span>。但是运维成本和精力都会相应的增加，根据实际情况选型即可。</span></li></ul><h4><a name="312-表主键的唯一性" class="md-header-anchor"></a><span>3.1.2 表主键的唯一性</span></h4><p><strong><span>流程</span></strong></p><p><span>利用主键唯一的特性，当多个insert请求同时提交到MySQL时，MySQL会保证只有一个操作可以成功，那我们就可以认为那个操作成功的节点获取了分布式锁。</span></p><p><span>当一个节点成功获取锁后，其他insert请求会返回失败，只需使用while()，循环insert即可。</span></p><p><span>当业务执行完毕后，发送delete请求，删除这条记录，即代表释放了锁。</span></p><pre spellcheck="false" class="md-fences md-end-block md-fences-with-lineno ty-contain-cm modeLoaded" lang="sql"><div class="CodeMirror cm-s-inner CodeMirror-wrap" lang="sql"><div style="overflow: hidden; position: relative; width: 3px; height: 0px; top: 0px; left: 29px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" tabindex="0" style="position: absolute; bottom: -1em; padding: 0px; width: 1000px; height: 1em; outline: none;"></textarea></div><div class="CodeMirror-scrollbar-filler" cm-not-content="true"></div><div class="CodeMirror-gutter-filler" cm-not-content="true"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 25px; margin-bottom: 0px; border-right-width: 0px; padding-right: 0px; padding-bottom: 0px;"><div style="position: relative; top: 0px;"><div class="CodeMirror-lines" role="presentation"><div role="presentation" style="position: relative; outline: none;"><div class="CodeMirror-measure"><pre><span>xxxxxxxxxx</span></pre><div class="CodeMirror-linenumber CodeMirror-gutter-elt"><div>2</div></div></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-code" role="presentation"><div class="CodeMirror-activeline" style="position: relative;"><div class="CodeMirror-activeline-background CodeMirror-linebackground"></div><div class="CodeMirror-gutter-background CodeMirror-activeline-gutter" style="left: -25px; width: 25px;"></div><div class="CodeMirror-gutter-wrapper CodeMirror-activeline-gutter" style="left: -25px;"><div class="CodeMirror-linenumber CodeMirror-gutter-elt CodeMirror-linenumber-show" style="left: 0px; width: 17px;">1</div></div><pre class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;"><span class="cm-keyword">insert</span> <span class="cm-keyword">into</span> id_distribute_lock(lock_name,expire_time,thread_id) <span class="cm-keyword">values</span>(?,?,?);</span></pre></div><div style="position: relative;"><div class="CodeMirror-gutter-wrapper" style="left: -25px;"><div class="CodeMirror-linenumber CodeMirror-gutter-elt CodeMirror-linenumber-show" style="left: 0px; width: 17px;">2</div></div><pre class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;"><span class="cm-keyword">delete</span> <span class="cm-keyword">from</span> id_distribute_lock <span class="cm-keyword">where</span> lock_name=<span class="cm-variable-3">?;</span></span></pre></div></div></div></div></div></div><div style="position: absolute; height: 0px; width: 1px; border-bottom: 0px solid transparent; top: 42px;"></div><div class="CodeMirror-gutters" style="height: 42px;"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 25px;"></div></div></div></div></pre><p><strong><span>优点</span></strong></p><ul><li><span>实现简单、易于理解，满足互斥性。</span></li><li><span>无需考虑索引引入的不确定行为。</span></li><li><span>无需长期占用数据库连接。</span></li></ul><p><strong><span>弊端</span></strong></p><ul><li><span>不满足可重入性。可添加一个字段count表示上锁次数，解决可重入性问题。</span></li><li><span>当已获取锁的客户端宕机时，锁未被释放，会导致其他客户端无法获取锁。可添加expire_time表示过期时间，thread_id表示线程ID，通过名为watchDog的服务，进行锁租期续约。如果客户端宕机，已获取的锁无法被续约，因此当过期后，可被其他客户端拿到这把锁。</span></li><li><span>公平性，建立一张中间表，将等待锁的线程全记录下来，并根据创建时间排序，只有最先创建的允许获取锁。（本质队列）</span></li></ul><p>&nbsp;</p><h3><a name="32-redis" class="md-header-anchor"></a><span>3.2 Redis</span></h3><p><span>上述基于MySQL的分布式锁原理很简单，也不难实现，但有两个非常明显的缺点。</span></p><ul><li><strong><span>单点问题</span></strong><span>：身为传统关系型数据库，MySQL虽能部署集群，但所带来的运维成本和精力都会相应的增加。何不采用比关系型数据库拥有更好扩展性的NoSQL数据库。</span></li><li><strong><span>性能问题</span></strong><span>：MySQL涉及到大量IO操作，这使得上锁与释放锁的操作未免太重了，尤其与小任务高并发场景显得格格不入。</span></li></ul><p><span>为了解决MySQL分布式锁的单点问题、性能问题，基于NoSQL的分布式锁就出现了，接下来我就具体和你分析下其中的原理与实现。</span></p><h4><a name="321-redislock" class="md-header-anchor"></a><span>3.2.1 RedisLock</span></h4><p><strong><span>原理</span></strong></p><pre spellcheck="false" class="md-fences md-end-block md-fences-with-lineno ty-contain-cm modeLoaded" lang="java"><div class="CodeMirror cm-s-inner CodeMirror-wrap" lang="java"><div style="overflow: hidden; position: relative; width: 3px; height: 0px; top: 0px; left: 29px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" tabindex="0" style="position: absolute; bottom: -1em; padding: 0px; width: 1000px; height: 1em; outline: none;"></textarea></div><div class="CodeMirror-scrollbar-filler" cm-not-content="true"></div><div class="CodeMirror-gutter-filler" cm-not-content="true"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 25px; margin-bottom: 0px; border-right-width: 0px; padding-right: 0px; padding-bottom: 0px;"><div style="position: relative; top: 0px;"><div class="CodeMirror-lines" role="presentation"><div role="presentation" style="position: relative; outline: none;"><div class="CodeMirror-measure"><pre><span>xxxxxxxxxx</span></pre><div class="CodeMirror-linenumber CodeMirror-gutter-elt"><div>1</div></div></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-code" role="presentation"><div class="CodeMirror-activeline" style="position: relative;"><div class="CodeMirror-activeline-background CodeMirror-linebackground"></div><div class="CodeMirror-gutter-background CodeMirror-activeline-gutter" style="left: -25px; width: 25px;"></div><div class="CodeMirror-gutter-wrapper CodeMirror-activeline-gutter" style="left: -25px;"><div class="CodeMirror-linenumber CodeMirror-gutter-elt CodeMirror-linenumber-show" style="left: 0px; width: 17px;">1</div></div><pre class=" CodeMirror-line " role="presentation"><span role="presentation" style="padding-right: 0.1px;"><span class="cm-variable">setnx</span>();<span class="cm-tab" role="presentation" cm-text="	">    </span><span class="cm-comment">// set if not exists：存在，不执行，返回0；不存在，执行，返回1</span></span></pre></div></div></div></div></div></div><div style="position: absolute; height: 0px; width: 1px; border-bottom: 0px solid transparent; top: 21px;"></div><div class="CodeMirror-gutters" style="height: 21px;"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 25px;"></div></div></div></div></pre><p><span>Redis上述指令的原子性，天然满足了互斥性，可基于此实现分布式锁。</span></p><p><strong><span>下面，我们来解决剩余的一系列问题。</span></strong></p><ul><li><span>客户端获取锁后，发生宕机，锁无法被正确释放</span></li></ul><p><span>Redis键值对天生支持TTL。使用lua脚本，保证set指令与expire指令的原子性，设置过期时间；Redis Java Client API也有对应的指令支持。并编写watchDog服务进行续约。</span></p><ul><li><span>续约细节与可重入性</span></li></ul><p><span>为实现续约时的线程判断，必须引入一个字段存放线程标识符，为实现可重入性，必须引入一个字段存放上锁次数，因此可采用hash数据类型。</span></p><ul><li><span>Redis高可用容灾</span></li></ul><p><span>可部署主从模式或Cluster模式，但因Redis集群只保证最终一致性，仍会存在数据不一致问题。</span></p><p><img src="images/image-20210317220456692.png" referrerpolicy="no-referrer" alt="image-20210317220456692"></p><p><img src="images/image-20210317220507871.png" referrerpolicy="no-referrer" alt="image-20210317220507871"></p><h4><a name="322-redlock" class="md-header-anchor"></a><span>3.2.2 RedLock</span></h4><p><span>为解决数据不一致问题，Redis作者Antirez推荐大家使用RedLock（红锁）</span></p><p><strong><span>RedLock步骤</span></strong></p><p><span>假设存在5个Redis节点，这些节点之间既没有主从，也没有集群关系。</span></p><ul><li><span>获取当前时间T1</span></li><li><span>向多个节点申请锁，存在申请成功、申请失败两种返回状态</span></li><li><span>再次获取当前时间T2，计算出申请锁所用时间T3=T2-T1</span></li><li><span>判断是否成功申请RedLock：①从大多数节点中申请到了锁；②锁可用时间&gt;T3</span></li><li><span>成功：实际可用时间=锁可用时间-T3，执行任务</span></li><li><span>失败：释放所有已申请的锁</span></li></ul><p><span>读者可自行带入实际场景，看看是否解决了Redis Lock的问题。</span></p><p><strong><span>本质</span></strong></p><p><span>通过多数派的唯一性解决数据不一致问题。</span></p><p>&nbsp;</p><h3><a name="33-zookeeper" class="md-header-anchor"></a><span>3.3 ZooKeeper</span></h3><p><span>上述解决方案看似解决了绝大多数问题，Redis基于内存的操作也拥有极高的性能，但仍有两个问题。</span></p><h4><a name="331-激烈的竞争" class="md-header-anchor"></a><span>3.3.1 激烈的竞争</span></h4><p><span>当获取不到锁时，客户端可阻塞一段时间（时间长短可根据竞争状态设置），再次请求锁服务数据系统。但此方案会产生很多无效网络请求，同时当大多数请求压到数据系统上，会影响正常业务的吞吐量。</span></p><p><span>基于ZooKeeper的Watch机制，当锁服务数据节点改变时，才主动回调客户端，进行锁资源的争抢。</span></p><p>&nbsp;</p><p><strong><span>羊群效应</span></strong><span>：若所有客户端监听同一节点，当此节点删除时，回调所有客户端进行锁节点的创建。</span></p><p><img src="images/image-20210317230757105.png" referrerpolicy="no-referrer" alt="image-20210317230757105"></p><p><span>若存在10000个客户端，每次回调都存在大量的服务资源、网络带宽开销。</span></p><p><strong><span>可采用临时顺序节点，解决羊群效应。</span></strong></p><p><span>每一客户端只监听它前一个节点，当前一节点释放锁时（删除节点），回调后一节点。</span></p><p><img src="images/image-20210317231339132.png" referrerpolicy="no-referrer" alt="image-20210317231339132"></p><p><strong><span>是否有点眼熟？</span></strong><span>	</span></p><p><span>技术千变万化，终有若干理念贯穿其中。</span></p><p><img src="images/image-20210317231544153.png" referrerpolicy="no-referrer" alt="image-20210317231544153"></p><h4><a name="332-gc与令牌" class="md-header-anchor"></a><span>3.3.2 GC与令牌</span></h4><p><span>下图展示了由于GC问题而导致的数据破坏的例子。该bug并非只是理论存在，HBase曾遭遇过该问题。</span></p><p><img src="images/]EHJ@S1GFUV{NZWOXTP4NC7.png" referrerpolicy="no-referrer" alt="img"></p><p><span>因为GC，持有租约的客户端被暂停太久直到租约到期。然后另一个客户端已经获得了锁租约，并开始写数据。接下来，当暂停的线程的客户端重新回来时，它仍然（错误地）认为合法持有锁并尝试写数据，结果导致数据污染。</span></p><p><span>为解决此问题，我们假设每次锁服务在授予锁或租约时，还会同时返回一个令牌，当令牌（数字）每授予一次就会递增（例如，由锁服务增加）。然后，要求客户端每次向存储系统发送写请求时，都必须包含所持有的fencing令牌。</span></p><p><img src="images/.png" referrerpolicy="no-referrer" alt="png"></p><p><span>上图，客户端1获得锁租约的同时得到了令牌号33，但随后陷入了一个长时间的暂停直到租约到期。这时客户端2已经获得了锁租约和令牌号34，然后发送写请求（以及令牌号34）到存储服务。接下来客户端1恢复过来，并以令牌号33来尝试写入，存储服务器由于记录了更高令牌号（34），因此拒绝令牌号33的写请求。</span></p><p><strong><span>当使用ZooKeeper作为锁服务时，可以用事务标识zxid或节点版本cversion来充当令牌，这两个都可以满足单调递增的要求。</span></strong></p><p>&nbsp;</p><h2><a name="4-总结" class="md-header-anchor"></a><span>4 总结</span></h2><p><span>总而言之，分布式锁即是将锁资源放在各客户端均可看到的第三方数据系统，并解决分布式环境所带来的一系列问题。</span></p><p><span>作为开发者，我们应根据实际业务场景做决策权衡，有利有弊才需要决策，有取有舍才需要权衡。</span></p><p><span>如果开发者本身的知识面不足以覆盖所需要决策的内容，不清楚其中的利弊，也就不可避免地会陷入选择困难症的困境之中，这便是我们在学习技术时应注重原理的原因。</span></p><p>&nbsp;</p><blockquote><p><span>由于水平有限，如果文中有任何问题和不足，烦请您留言告知，不胜感激！</span></p></blockquote><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p></div>
+</body>
+</html>
